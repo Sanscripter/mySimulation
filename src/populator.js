@@ -1,0 +1,1 @@
+postMessage(populator(30,myGrid.arrays));

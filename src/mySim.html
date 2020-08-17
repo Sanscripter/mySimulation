@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>My Sim</title>
+	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-beta.2/css/bootstrap.min.css" integrity="sha384-PsH8R72JQ3SOdhVi3uxftmaW6Vc51MKb0q5P2rRUpPvrszuE4W1povHYgTpBfshb" crossorigin="anonymous">
+	<script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-beta.2/js/bootstrap.min.js" integrity="sha384-alpBpkh1PFOepccYVYDB4do5UnbKysX5WZXm3XxPqe5iKTfUKjNkCk9SaVuEZflJ" crossorigin="anonymous"></script>
+	
+	<style>
+		#code{
+			font-family: Consolas, "Andale Mono WT", "Andale Mono", "Lucida Console", "Lucida Sans Typewriter", "DejaVu Sans Mono", "Bitstream Vera Sans Mono", "Liberation Mono", "Nimbus Mono L", Monaco, "Courier New", Courier, monospace;
+			color:#f4a261;;
+		}
+
+		#data{
+			background-color: black;
+			color: white;
+			font-size: medium ; 
+			font-family: Consolas,Monaco,Lucida Console,Liberation Mono,DejaVu Sans Mono,Bitstream Vera Sans Mono,Courier New, monospace;
+			width: 100%;
+			display: inline-block;
+			
+		}
+
+		body{
+			/* background-color:#264653; */
+			/* background-color:#e76f51; */
+			/* background-color:#f4a261; */
+			background-color:#2a9d8f;
+		}
+	</style>
+</head>
+<body>
+<div class="row">
+	<div class="m-auto col-6">
+		<pre id="code" class="text-center"> </pre>		
+	</div>
+</div>
+<div class="row">
+	<div class="col-8 flow overflow-auto">
+		<pre id="data" class="p-3" ></pre>
+	</div>
+	<div class="col-4 justify-content-center">
+		<button class="btn btn-light" onclick="restart()">Restart</button>
+	</div>
+</div>
+
+<script src="grid.js"></script>
+<script src="entity.js"></script>
+<script src="food.js"></script>
+
+<script type="text/javascript">
+	function restart(){
+		location.reload();
+	}
+
+	myGrid = new Grid(12);
+	//guy = new Entity(myGrid.arrays);
+	//guy.begin();
+
+	basicFauna = populator(7,myGrid.arrays);
+	basicFood = feeder(5,myGrid.arrays);
+
+
+	function feeder(population, grid){
+		popList = [];
+		for (var i = 0; i < population; i++) {
+			popList[i] = new Food(grid);
+			popList[i].begin(); 
+		}
+		return popList;
+	}
+
+	function populator(population, grid){
+		popList = [];
+		for (var i = 0; i < population; i++) {
+			popList[i] = new Entity(grid);
+			popList[i].begin(); 
+		}
+		return popList;
+	}
+
+	function updater(){
+		var foodCount = 0;
+		for (var i = 0; i < basicFood.length; i++) {
+			if(!basicFood[i].alive){
+				basicFood.splice(i,1);
+				continue;
+			}
+			console.log(basicFood)
+			basicFood[i].update();
+			foodCount++;
+			if(basicFood[i].isBreeding){
+				var myBreed = feeder(Math.ceil(Math.random() * 2), myGrid.arrays);
+				myBreed.forEach(el => basicFood.push(el));
+			}
+		}
+
+		var populationCount = 0;
+		
+		for (var i = 0; i < basicFauna.length; i++) {
+
+			basicFauna[i].update();
+	
+			if(basicFauna[i].avatar != " † "){
+				populationCount++;
+			}
+
+			for (var k = 0; k < basicFauna.length; k++) {
+				if ( i!= k && basicFauna[i].X == basicFauna[k].X && basicFauna[i].Y == basicFauna[k].Y && !(basicFauna[i].avatar==" † " || basicFauna[k].avatar==" † ")) {
+					basicFauna[i].meet = basicFauna[k].meet = true;
+				} else{
+					basicFauna[i].meet = basicFauna[k].meet = false;
+				}
+			}
+
+			for (var k = 0; k < basicFood.length; k++) {
+				if (basicFauna[i].X == basicFood[k].X && basicFauna[i].Y == basicFood[k].Y && !(basicFauna[i].avatar==" † " || basicFauna[i].ate)) {
+					
+					basicFauna[i].ate = true;
+					basicFauna[i].meal = basicFood[k];
+					basicFood[k].lifespan = -1;
+				} else{
+					basicFauna[i].ate = false;
+				}
+			}
+
+			if(basicFauna[i].meet && basicFauna[i].reproductiveChance>.65){
+				var newBorns = [];
+				console.log("REPRODUCTION ACHIEVED WITH CHANCE: "+basicFauna[i].reproductiveChance);
+				document.getElementById('data').innerHTML +=  "REPRODUCTION ACHIEVED WITH CHANCE: "+basicFauna[i].reproductiveChance+"<br>"
+				
+				if(basicFauna[i].reproductiveChance>.80){//use of constants
+					newBorns = populator(Math.floor(1+Math.random()*2),myGrid.arrays);
+				}else 
+				if(basicFauna[i].reproductiveChance>.95){
+					newBorns = populator(Math.floor(1+Math.random()*4),myGrid.arrays);			
+				}else{
+					newBorns = populator(1,myGrid.arrays)
+				}
+
+				newBorns.forEach(el => basicFauna.push(el))	
+			}
+
+		}
+		console.log("CURRENT POPULATION: "+populationCount);
+		document.getElementById('data').innerHTML +=  "CURRENT POPULATION: "+populationCount+"<br>"
+		console.log("CURRENT FOOD: "+foodCount);
+		document.getElementById('data').innerHTML +=  "CURRENT FOOD: "+foodCount+"<br>"
+		if(populationCount == 0){
+			epoch = 1001;
+		}
+	
+		//guy.update();
+		myGrid.draw();
+
+	}
+	epoch = 0;
+	setInterval(function(){
+		if(epoch<1000){
+			document.getElementById('data').innerHTML =  "";
+			console.log("Epoch: "+epoch);
+			document.getElementById('data').innerHTML +=  "Epoch: "+epoch+"<br>"
+			updater();
+			epoch++;
+		}
+
+	},100);
+
+/*var floraCount = 0;
+		var sprouterID = Math.floor(Math.random()*(basicFood.length));
+				console.log(basicFood.length);
+		console.log(sprouterID);
+		basicFood[sprouterID].breeder(basicFood);
+
+		for (var i = 0; i < basicFood.length; i++) {
+			
+			basicFood[i].lifespan-= Math.random()*4;
+
+			if(basicFood[i].lifespan<0){				
+				basicFood.splice(i,1);
+			}
+
+			if(basicFood[i].avatar != "   "){
+				floraCount++;
+			}
+
+			//eating
+			for (var k = 0; k < basicFauna.length; k++) {
+				if (basicFood[i].X == basicFauna[k].X && basicFood[i].Y == basicFauna[k].Y && !(basicFauna[k].avatar==" † " || basicFood[i].avatar=="   ")) {
+
+					basicFauna[k].ate = true;
+					basicFauna[k].meal = basicFood[i];
+
+				} else{
+
+					basicFauna[k].ate = false;
+				}
+			}
+		}
+
+			
+
+	*/
+
+
+</script>
+</body>
+</html>

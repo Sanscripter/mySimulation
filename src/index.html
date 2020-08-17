@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Sim</title>
+	
+</head>
+<body>
+
+	<pre id="hud">
+
+	</pre>
+
+<script type="text/javascript">
+	function Grid(size) {
+		this.size = size;
+		this.arrayMaker = function(){
+			array = Array(this.size);
+			for (var i = 0; i < array.length; i++) {
+				array[i] = Array(this.size);
+				for (var k = 0; k < array[i].length; k++) {
+					if(i == 0 || k == 0 || i==array.length-1 || k==array[i].length-1 ){
+						array[i][k] = " # "
+					}else{
+						array[i][k] = "   ";	
+					}
+					
+				}
+			}
+			return array;
+		};
+		this.arrays = this.arrayMaker();
+		this.raster = function(){
+			lines = []
+			for (var i = 0; i < this.size; i++) {
+				lines[i] = "";
+				for (var k = 0; k < this.size; k++){
+						
+						lines[i] += this.arrays[k][i];
+				}
+				lines[i] += ""
+			}
+			return lines;
+		};
+		this.draw = function(){
+			let result = '';
+			for (var i = 0; i < myGrid.size; i++) {
+				result+= `\n ${myGrid.raster()[i]} `;
+			}
+			document.getElementById('hud').innerHTML = result;
+		};
+	}
+
+	
+
+	function Entity(grid){
+		this.avatar = " @ ";
+		this.grid = grid;
+		this.sad = 0; //if it reaches 100; they commit suicide
+		this.hungry = 0;
+		this.sadMod = .81; //arbitrary
+		this.X = 0;
+		this.Y = 0;
+		this.moveX = 1;
+		this.moveY = 1;
+		this.startX = 2;
+		this.startY = 3;
+		this.meet = false;
+		this.ate = false;
+		this.meal = "";
+		this.reproductiveChance = Math.random();
+		this.morale = function(){
+			if(this.sad != "/Commited suicide/" ){
+				if(grid[this.X+1][this.Y] != this.avatar && grid[this.X-1][this.Y] != this.avatar && grid[this.X][this.Y+1] != this.avatar && grid[this.X][this.Y-1] != this.avatar && grid[this.X+1][this.Y+1] != this.avatar && grid[this.X-1][this.Y-1] != this.avatar && grid[this.X-1][this.Y+1] != this.avatar && grid[this.X+1][this.Y-1] != this.avatar && !this.meet){
+
+					if(grid[this.X+1][this.Y] ==" † " || grid[this.X-1][this.Y] ==" † " || grid[this.X][this.Y+1] ==" † " || grid[this.X][this.Y-1] ==" † " || grid[this.X+1][this.Y+1] ==" † " || grid[this.X-1][this.Y-1] ==" † " || grid[this.X-1][this.Y+1] ==" † " || grid[this.X+1][this.Y-1] ==" † "){
+
+							this.sad += Math.random()*9;
+					}
+
+					this.sad += Math.random()*3*this.sadMod;
+
+				} else {
+					this.sad -= Math.random()*this.sadMod;
+				}
+			}
+
+			if(this.sad >100){
+				this.avatar = " † "
+				this.moveX = 0;
+				this.moveY = 0;
+				this.sadMod = 0;
+				this.sad ="/Commited suicide/"
+
+			}
+
+			
+		};
+		this.hunger = function(){
+			if(this.hungry != "/Starved/" ){
+				if(grid[this.X+1][this.Y] != this.avatar && grid[this.X-1][this.Y] != this.avatar && grid[this.X][this.Y+1] != this.avatar && grid[this.X][this.Y-1] != this.avatar && grid[this.X+1][this.Y+1] != this.avatar && grid[this.X-1][this.Y-1] != this.avatar && grid[this.X-1][this.Y+1] != this.avatar && grid[this.X+1][this.Y-1] != this.avatar && !this.ate){
+
+					this.hungry += Math.random()*6*this.sadMod;
+
+				} else {
+					if(this.meal){
+						this.hungry -= this.meal.satiety;	
+					}
+					
+				}
+			}
+
+			if(this.hungry >100){
+				this.avatar = " † "
+				this.moveX = 0;
+				this.moveY = 0;
+				this.sadMod = "";
+				this.hungry ="/Starved/";
+				this.ate = true;
+
+			}
+
+			
+		};
+		this.begin = function(){
+			this.X = this.startX;
+			this.Y = this.startY;
+			this.grid[this.X][this.Y] = this.avatar;
+		};
+		this.update = function(){
+			var signX,signY;
+			
+			if(Math.random()>0.5){
+				signX = 1;
+			} else {
+				signX = -1;
+			}
+			
+			if(Math.random()>0.5){
+				signY = 1;
+			} else {
+				signY = -1;
+			}
+			
+			this.morale();
+			this.hunger();
+
+			console.log("Sadness: "+this.sad + " Hunger: "+this.hungry);
+
+			grid[this.X][this.Y] = "   "
+
+			if(this.X + signX != grid.length -1 && this.X + signX != 0){
+				this.X += this.moveX*signX;	
+			}
+			
+			if(this.Y + signY != grid.length -1 && this.Y + signY != 0){
+				this.Y += this.moveY*signY;	
+			}
+			
+			
+			grid[this.X][this.Y] = this.avatar;
+		};
+
+	}
+
+	myGrid = new Grid(12);
+	//guy = new Entity(myGrid.arrays);
+	//guy.begin();
+
+	basicFauna = populator(7,myGrid.arrays);
+	basicFood = feeder(5,myGrid.arrays);
+
+
+	function feeder(population, grid){
+		popList = [];
+		for (var i = 0; i < population; i++) {
+			popList[i] = new Food(grid);
+			popList[i].begin(); 
+		}
+		return popList;
+	}
+
+	function populator(population, grid){
+		popList = [];
+		for (var i = 0; i < population; i++) {
+			popList[i] = new Entity(grid);
+			popList[i].begin(); 
+		}
+		return popList;
+	}
+
+	function Food(grid){
+		this.seedX =Math.random();
+		this.seedY = Math.random();
+		this.avatar = " * ";
+		this.grid = grid;
+		this.satiety = 5;
+		this.lifespan = 7;
+		this.isBreeding = false;
+		this.X = Math.ceil(this.seedX*this.grid.length)+1;
+		this.Y = Math.ceil(this.seedY*this.grid.length)+1;
+		this.sproutChance = Math.random();
+		this.decay = function(){
+			this.lifespan-=Math.random()*3;
+			if(this.lifespan <=0){
+				this.avatar = "   ";
+			}
+		};
+		this.update = function(){
+			if(Math.random()>.9){
+				this.isBreeding = true;
+			} else{
+				this.isBreeding = false;
+			}
+			this.decay();
+			this.grid[this.X][this.Y] = this.avatar;
+		};
+		this.begin = function(){
+			
+			if(this.X>=grid.length-1){
+				this.X = this.grid.length-2;
+			}
+			if(this.Y>=grid.length-1){
+				this.Y = this.grid.length-2;
+			}
+
+			//console.log(this.X);
+			//console.log(this.Y);
+
+
+			this.grid[this.X][this.Y] = this.avatar;
+		};
+	}
+	
+
+	function updater(){
+		var foodCount = 0;
+		for (var i = 0; i < basicFood.length; i++) {
+			basicFood[i].update();
+			foodCount++;
+			if(basicFood[i].isBreeding){
+				var myBreed = feeder(Math.ceil(Math.random()*3),myGrid.arrays);
+				for (var k = 0; k < myBreed.length; k++) {
+					basicFood.push(myBreed[k]);
+				}
+			}
+			if(basicFood[i].avatar == "   "){
+				basicFood.splice(i,1);
+			}
+		}
+
+
+
+
+		var populationCount = 0;
+		for (var i = 0; i < basicFauna.length; i++) {
+
+			basicFauna[i].update();
+
+
+			
+			if(basicFauna[i].avatar != " † "){
+				populationCount++;
+			}
+
+			for (var k = 0; k < basicFauna.length; k++) {
+				if ( i!= k && basicFauna[i].X == basicFauna[k].X && basicFauna[i].Y == basicFauna[k].Y && !(basicFauna[i].avatar==" † " || basicFauna[k].avatar==" † ")) {
+					basicFauna[i].meet = basicFauna[k].meet = true;
+				} else{
+					basicFauna[i].meet = basicFauna[k].meet = false;
+				}
+			}
+
+			for (var k = 0; k < basicFood.length; k++) {
+				if (basicFauna[i].X == basicFood[k].X && basicFauna[i].Y == basicFood[k].Y && !(basicFauna[i].avatar==" † " || basicFauna[i].ate)) {
+					
+					basicFauna[i].ate = true;
+					basicFauna[i].meal = basicFood[k];
+					basicFood[k].lifespan = -1;
+				} else{
+					basicFauna[i].ate = false;
+				}
+			}
+
+			if(basicFauna[i].meet && basicFauna[i].reproductiveChance>.65){
+				var newBorns = [];
+				console.log("REPRODUCTION ACHIEVED WITH CHANCE: "+basicFauna[i].reproductiveChance);
+				
+				if(basicFauna[i].reproductiveChance>.80){
+					newBorns = populator(Math.floor(1+Math.random()*2),myGrid.arrays);
+				}else 
+				if(basicFauna[i].reproductiveChance>.95){
+					newBorns = populator(Math.floor(1+Math.random()*4),myGrid.arrays);			
+				}else{
+					newBorns = populator(1,myGrid.arrays)
+				}
+
+				for(k=0;k<newBorns.length;k++){
+					basicFauna.push(newBorns[k])
+				}
+			}
+
+		}
+		console.log("CURRENT POPULATION: "+populationCount);
+		console.log("CURRENT FOOD: "+foodCount);
+		if(populationCount == 0){
+			epoch = 1001;
+		}
+	
+		//guy.update();
+		myGrid.draw();
+	}
+	epoch = 0;
+	setInterval(function(){
+		if(epoch<1000){
+			console.log("Epoch: "+epoch);
+			updater();
+			epoch++;
+		}
+
+	},100);
+
+/*var floraCount = 0;
+		var sprouterID = Math.floor(Math.random()*(basicFood.length));
+				console.log(basicFood.length);
+		console.log(sprouterID);
+		basicFood[sprouterID].breeder(basicFood);
+
+		for (var i = 0; i < basicFood.length; i++) {
+			
+			basicFood[i].lifespan-= Math.random()*4;
+
+			if(basicFood[i].lifespan<0){				
+				basicFood.splice(i,1);
+			}
+
+			if(basicFood[i].avatar != "   "){
+				floraCount++;
+			}
+
+			//eating
+			for (var k = 0; k < basicFauna.length; k++) {
+				if (basicFood[i].X == basicFauna[k].X && basicFood[i].Y == basicFauna[k].Y && !(basicFauna[k].avatar==" † " || basicFood[i].avatar=="   ")) {
+
+					basicFauna[k].ate = true;
+					basicFauna[k].meal = basicFood[i];
+
+				} else{
+
+					basicFauna[k].ate = false;
+				}
+			}
+		}
+
+			
+
+	*/
+
+
+</script>
+</body>
+</html>
