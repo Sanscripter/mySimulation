@@ -25,13 +25,13 @@
 			/* background-color:#264653; */
 			/* background-color:#e76f51; */
 			/* background-color:#f4a261; */
-			background-color:#2a9d8f;
+			background-color: black;
 		}
 	</style>
 </head>
 <body>
 <div class="row">
-	<div class="m-auto col-6">
+	<div class="m-auto col-12">
 		<pre id="code" class="text-center"> </pre>		
 	</div>
 </div>
@@ -44,6 +44,8 @@
 	</div>
 </div>
 
+<script src="pubSub.js"></script>
+<script src="vector.js"></script>
 <script src="grid.js"></script>
 <script src="entity.js"></script>
 <script src="food.js"></script>
@@ -53,12 +55,31 @@
 		location.reload();
 	}
 
-	myGrid = new Grid(12);
+	let PubSub1 = new PubSub();
+	let PubSub2 = new PubSub();
+	let PubSubTest = new PubSub();
+
+	PubSub2.subscribe(PubSub1, "wem", function () {
+		console.log("wem");
+	});
+
+	PubSub1.publish("wem");
+
+
+
+	let myGrid = new Grid(11, 10);
+	myGrid.subscribe(PubSubTest, "destroy", function(){
+		myGrid.environment = [];
+	})
+	console.log(myGrid.getSquare(new Vector(0,0)))
+	console.log(myGrid.getSquare(new Vector(4,5)))
+	console.log(myGrid.setSquare(new Vector(4,5), "&"))
+	console.log(myGrid.setSquare(new Vector(0,0), "$"))
 	//guy = new Entity(myGrid.arrays);
 	//guy.begin();
 
-	basicFauna = populator(7,myGrid.arrays);
-	basicFood = feeder(5,myGrid.arrays);
+	// basicFauna = populator(7,myGrid.arrays);
+	// basicFood = feeder(5,myGrid.arrays);
 
 
 	function feeder(population, grid){
@@ -154,13 +175,20 @@
 		myGrid.draw();
 
 	}
+	
 	epoch = 0;
 	setInterval(function(){
 		if(epoch<1000){
 			document.getElementById('data').innerHTML =  "";
 			console.log("Epoch: "+epoch);
 			document.getElementById('data').innerHTML +=  "Epoch: "+epoch+"<br>"
-			updater();
+			// updater();
+			myGrid.draw();
+			if(epoch === 96){
+				PubSubTest.publish("destroy");
+
+			}
+
 			epoch++;
 		}
 

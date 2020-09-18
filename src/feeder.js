@@ -1,1 +1,0 @@
-postMessage(feeder(20,myGrid.arrays));
