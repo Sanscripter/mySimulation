@@ -6,7 +6,7 @@ This might change, but it was initially enviosioned as an enviroment simulation.
 
 # Roadmap
 
-- [ ] Improved Grid Class
+- [x] Improved Grid Class
 - [ ] Improved World Class
 - [ ] Predators
 - [ ] Solve stacking of plants upon sproutiong
